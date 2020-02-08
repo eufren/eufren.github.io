@@ -1,7 +1,7 @@
 function randomNumbers() {
-		document.getElementById("number").innerHTML = Math.floor(Math.random() * Math.floor(10));;
+		document.getElementById("number").innerText = Math.floor(Math.random() * Math.floor(10));;
 }
 
-var myVar = setInterval(randomNumbers, 500);
+var setInterval = setInterval(randomNumbers, 500);
 
 randomNumbers()
