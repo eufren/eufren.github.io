@@ -22,7 +22,7 @@ function changeNumber(number){
 const targetSequence = [randomNumber(0, 10), randomNumber(0, 10), randomNumber(0, 10)];
 //const targetSequence = [1,2,3];
 var makeSureWeDontAccidentallyShowTargetSequence = [...targetSequence]; // It doesn't matter if this triggers the check first time. Have to do this weird 'spread' thing to copy values.
-var probability = 0.2;
+var probability = 0.05;
 var currentNumber = 0;
 var inTargetSequence = false;
 var position = 0;
