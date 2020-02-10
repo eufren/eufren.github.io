@@ -19,10 +19,16 @@ function changeNumber(number){
 	document.getElementById("number").innerText = number;
 }
 
-const targetSequence = [randomNumber(0, 10), randomNumber(0, 10), randomNumber(0, 10)];
+const targetSequence = [];
+var targetSequenceLength = 3;
+var currentNumber = 0;
+for(i=0; i<targetSequenceLength; i++){
+	currentNumber = nonRepeatingRandomNumbers(currentNumber);
+	targetSequence.push(currentNumber);
+}
+
 var makeSureWeDontAccidentallyShowTargetSequence = targetSequence.slice(0,-2); // It doesn't matter if this triggers the check first time.
 var probability = 0.05;
-var currentNumber = 0;
 var inTargetSequence = false;
 var position = 0;
 
