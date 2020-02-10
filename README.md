@@ -15,5 +15,6 @@ In future, it will:
 - Have a mechanism for timing reaction speed, focus over time etc
 - Use firebase to send data to a database for aggregation and sharing
 - Track individuals, so no spoofing of data to ruin dataset (anonymised IP tracking?)
+- Use webcam and machine learning to estimate face/eye pose to measure physical inattentivity/hyperactivity
 - Have a tutorial, introduction page
 - Have a data page
