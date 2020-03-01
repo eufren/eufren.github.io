@@ -58,6 +58,9 @@ class GameStateMachine{ // Returns the state it changed to
 						this.state = "printRandom";
 					}
 				}
+				else if(signal.type == "buttonPress"){
+					console.log("False alarm!"); /// REPLACE ME WITH THE DATABASE STUFF
+				}
 				break;
 
 			case "printRandom":
@@ -71,6 +74,9 @@ class GameStateMachine{ // Returns the state it changed to
 					else if (Math.random() < this.probability){
 						this.state = "printSequence";
 					}
+				}
+				else if(signal.type == "buttonPress"){
+					console.log("False alarm!"); /// REPLACE ME WITH THE DATABASE STUFF
 				}
 				break;
 
@@ -89,6 +95,9 @@ class GameStateMachine{ // Returns the state it changed to
 					else{ // otherwise,
 						this.position++; // we aren't at the end, so increment the marker.
 					}
+				}
+				else if(signal.type == "buttonPress"){
+					console.log("False alarm!"); /// REPLACE ME WITH THE DATABASE STUFF
 				}
 				break;
 
@@ -119,8 +128,6 @@ console.log("created gameEngine");
 window.onload = function initialise(){
 document.getElementById("targSequencey").innerText = "Target Sequence = ["+gameEngine.targetSequence+"]";
 }
-
-//setInterval(function(){gameEngine.send(clockTick)}, 500);
 
 var interval = 500; // ms
 var expected = Date.now() + interval;
