@@ -26,7 +26,6 @@ class Signal{ // This might be pointless
 }
 
 // Define signals
-const start = new Signal("start");
 const execute = new Signal("execute");
 const clockTick = new Signal("clockTick");
 const buttonPress = new Signal("buttonPress");
@@ -46,6 +45,7 @@ class GameStateMachine{ // Returns the state it changed to
 		this.endTime = Date();
 		this.lastNumbers = this.targetSequence.slice(1, this.targetSequence.length) // [4,6,2]
 	}
+
 	send(signal){ // Gaze upon my works ye mighty, and despair (prepare for a horrid stack of if/else)
 		switch(this.state){
 
@@ -82,7 +82,7 @@ class GameStateMachine{ // Returns the state it changed to
 					changeNumber(this.targetSequence[this.position]); // Change the number to the matching one in sequence.
 					if(this.position == this.targetSequence.length-1){ // If we just changed the last number in sequence,
 						this.startTime = Date.now();
-						this.currentNumber = this.targetSequence[this.targetSequence.length-1]; // So we don't print the same number after leaving the sequence!
+						this.currentNumber = nonRepeatingRandomNumbers(this.targetSequence[this.targetSequence.length-1]); // So we don't print the same number after leaving the sequence!
 						this.position = 0;
 						this.state = "awaitPress";
 					}
@@ -95,23 +95,17 @@ class GameStateMachine{ // Returns the state it changed to
 			case "awaitPress":
 				if(signal.type == "buttonPress"){
 					this.endTime = Date.now();
-					this.state = "correctPress";
+					const reactionTime = this.endTime - this.startTime;
+					console.log("Reaction time:" + reactionTime); /// REPLACE ME WITH THE DATABASE STUFF
+					this.state = "printRandom"; // Note that this means the program will never enter target sequence immediately after leaving it
 				}
 				else if(signal.type == "clockTick"){
-					this.state = "missedPress";
+					console.log(this.currentNumber)
+					changeNumber(this.currentNumber); // Do this first, to try and keep timing as close to 500ms between numbers as possible
+					this.currentNumber = nonRepeatingRandomNumbers(this.currentNumber);
+					console.log("Missed the sequence!"); /// REPLACE ME WITH THE DATABASE STUFF
+					this.state = "printRandom";
 				}
-				break;
-
-			case "correctPress":
-				const reactionTime = this.endTime - this.startTime;
-				console.log("Reaction time:" + reactionTime); /// REPLACE ME WITH THE DATABASE STUFF
-				this.state = "printRandom"; // Note that this means the program will never enter target sequence immediately after leaving it
-				break;
-
-			case "missedPress":
-				changeNumber(this.currentNumber); // Do this first, to try and keep timing as close to 500ms between numbers as possible
-				console.log("Missed the sequence!"); /// REPLACE ME WITH THE DATABASE STUFF
-				this.state = "printRandom";
 				break;
 
 		}
