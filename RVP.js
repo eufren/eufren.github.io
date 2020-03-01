@@ -19,52 +19,108 @@ function changeNumber(number){
 	document.getElementById("number").innerText = number;
 }
 
-const targetSequence = [];
-var targetSequenceLength = 3;
-var currentNumber = 0;
-for(i=0; i<targetSequenceLength; i++){
-	currentNumber = nonRepeatingRandomNumbers(currentNumber);
-	targetSequence.push(currentNumber);
+class Signal{ // This might be pointless
+	constructor(type){
+		this.type = type;
+	}
 }
 
-var makeSureWeDontAccidentallyShowTargetSequence = targetSequence.slice(0,-2); // It doesn't matter if this triggers the check first time.
-var probability = 0.05;
-var inTargetSequence = false;
-var position = 0;
+// Define signals
+const start = new Signal("start");
+const execute = new Signal("execute");
+const clockTick = new Signal("clockTick");
+const buttonPress = new Signal("buttonPress");
 
-function game(){
-	if(inTargetSequence){ // If we're meant to be printing the target sequence,
-		if (position == 0 && currentNumber == targetSequence[0]){ // If we accidentally jumped in on the first number of the sequence,
-			position++; // Jump to the second.
+class GameStateMachine{ // Returns the state it changed to
+	constructor(targetSequenceLength) {
+		this.state = "start";
+		this.position = 0;
+		this.currentNumber = 0;
+		this.targetSequence = [];
+		for(i=0; i<targetSequenceLength; i++){ // targetSequence will end up looking like [1,4,6,2] (random numbers)
+			this.currentNumber = nonRepeatingRandomNumbers(this.currentNumber);
+			this.targetSequence.push(this.currentNumber);
 		}
-		changeNumber(targetSequence[position]); // Change the number to the matching one in sequence.
-		if(position == targetSequence.length-1){ // If we just changed the last number in sequence,
-			position = 0; // Then set marker back to start of sequence,
-			currentNumber = targetSequence[targetSequence.length-1]; // So we don't print the same number after leaving the sequence!
-			inTargetSequence = false; // and leave the target sequence state.
-			return
-		}
-		else{ // otherwise,
-			position++; // we aren't at the end, so increment the marker.
-			return
+		this.probability = 0.05;
+		this.startTime = Date();
+		this.endTime = Date();
+		this.lastNumbers = this.targetSequence.slice(1, this.targetSequence.length) // [4,6,2]
+	}
+	send(signal){ // Gaze upon my works ye mighty, and despair (prepare for a horrid stack of if/else)
+		switch(this.state){
+			case "start":
+				if(signal.type == "clockTick"){
+					if (Math.random() < probability){
+						this.state = "printSequence";
+					}
+					else{
+						this.state = "printRandom";
+					}
+				}
+				return this.state;
+
+			case "printRandom":
+				if(signal.type == "clockTick"){
+					changeNumber(this.currentNumber);
+					if (this.lastNumbers == this.targetSequence.slice(0, this.targetSequence.length-1)){ // Did we accidentally print the first n-1 numbers of the target sequence?
+						this.position == this.targetSequence.length-1; // Jump to end of target sequence
+						this.state = "printSequence";
+					}
+					else if (Math.random() < this.probability){
+						this.state = "printSequence";
+					}
+				}
+				return this.state;
+
+			case "printSequence":
+				if(signal.type == "clockTick"){
+					if (this.position == 0 && this.currentNumber == this.targetSequence[0]){ // If we accidentally jumped in on the first number of the sequence,
+						this.position++; // Jump to the second.
+					}
+					changeNumber(this.targetSequence[position]); // Change the number to the matching one in sequence.
+					if(this.position == this.targetSequence.length-1){ // If we just changed the last number in sequence,
+						this.startTime = Date();
+						this.currentNumber = targetSequence[targetSequence.length-1]; // So we don't print the same number after leaving the sequence!
+						this.state = "awaitPress"; // Then set marker back to start of sequence,
+					}
+					else{ // otherwise,
+						this.position++; // we aren't at the end, so increment the marker.
+					}
+				}
+				return this.state;
+
+			case "awaitPress":
+				if(signal.type == "buttonPress"){
+					this.endTime = Date();
+					this.state = "correctPress";
+				}
+				else if(signal.type == "clockTick"){
+					this.state = "missedPress";
+				}
+				return this.state;
+
+			case "correctPress":
+				reactionTime = this.endTime - this.startTime;
+				console.log("Reaction time:" + reactionTime); /// REPLACE ME WITH THE DATABASE STUFF
+				this.state = "printRandom"; // Note that this means the program will never enter target sequence immediately after leaving it
+				return this.state;
+
+			case "missedPress":
+				changeNumber(this.currentNumber); // Do this first, to try and keep timing as close to 500ms between numbers as possible
+				console.log("Missed the sequence!"); /// REPLACE ME WITH THE DATABASE STUFF
+				this.state = "printRandom";
+				return this.state;
+
 		}
 	}
-	else if (Math.random() < probability){ // Do a check for whether we should enter the target sequence,
-		inTargetSequence = true; // and set flag if we should
-	}
-	//console.log("produced random number: " + currentNumber);
-	currentNumber = nonRepeatingRandomNumbers(currentNumber); // Not currently in target sequence, or meant to enter it next loop, so produce a random number.
-	changeNumber(currentNumber);
-	makeSureWeDontAccidentallyShowTargetSequence.shift(); // Get rid of the oldest number,
-	makeSureWeDontAccidentallyShowTargetSequence.push(currentNumber); // and add the current one.
-	if (makeSureWeDontAccidentallyShowTargetSequence == targetSequence.slice(0, -2)){ // Have we accidentally printed all but the last element of the target sequence?
-		currentNumber = targetSequence[targetSequence.length-1]; // If we have, then set currentNumber to last element of target sequence, ensuring it won't be printed.
-	}
-	return;
 }
 
 window.onload = function initialise(){
-document.getElementById("targSequencey").innerText = "Target Sequence = ["+targetSequence+"]";
-
-setInterval(game, 500);
+const gameEngine = new GameStateMachine(3);
+document.getElementById("targSequencey").innerText = "Target Sequence = ["+gameEngine.targetSequence+"]";
+setInterval(gameEngine.send(clockTick), 500);
 }
+
+// Other things to measure:
+// 	Probabiltiy of false alarms
+// 	Sensitivity (Not sure what this is; probably proportion of misses)

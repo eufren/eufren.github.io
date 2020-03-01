@@ -14,11 +14,11 @@
 
 	<div class="title">Rapid Visual Processing</div>
 
-	<div class="number" id="number"></div>
-	
+	<div class="number" id="number">Starting...</div>
+
 	<div class="targSequence" id="targSequencey"></div>
 
-	
+
 	<!----------------------------------------------------------------------------------------------------------->
 
 	<!-- The core Firebase JS SDK is always required and must be listed first -->
@@ -45,7 +45,7 @@
 	  firebase.initializeApp(firebaseConfig);
 	  console.log("initialised firebase");
 	</script>
-	
+
 	<script>
 		function saveToFirebase(number) {
 			console.log("click");
@@ -57,8 +57,8 @@
 				});
 		}
 	</script>
-	
-	<button class="button" onclick="saveToFirebase(document.getElementById('number').innerText)">Seen!</button>
+
+	<button class="button" onclick="gameEngine.send('buttonPress')">Seen!</button>
 
 </body>
 </html>
