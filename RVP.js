@@ -37,31 +37,33 @@ class GameStateMachine{ // Returns the state it changed to
 		this.position = 0;
 		this.currentNumber = 0;
 		this.targetSequence = [];
-		for(i=0; i<targetSequenceLength; i++){ // targetSequence will end up looking like [1,4,6,2] (random numbers)
+		for(var i=0; i<targetSequenceLength; i++){ // targetSequence will end up looking like [1,4,6,2] (random numbers)
 			this.currentNumber = nonRepeatingRandomNumbers(this.currentNumber);
 			this.targetSequence.push(this.currentNumber);
 		}
-		this.probability = 0.05;
+		this.probability = 0.1;
 		this.startTime = Date();
 		this.endTime = Date();
 		this.lastNumbers = this.targetSequence.slice(1, this.targetSequence.length) // [4,6,2]
 	}
 	send(signal){ // Gaze upon my works ye mighty, and despair (prepare for a horrid stack of if/else)
 		switch(this.state){
+
 			case "start":
 				if(signal.type == "clockTick"){
-					if (Math.random() < probability){
+					if (Math.random() < this.probability){
 						this.state = "printSequence";
 					}
 					else{
 						this.state = "printRandom";
 					}
 				}
-				return this.state;
+				break;
 
 			case "printRandom":
 				if(signal.type == "clockTick"){
 					changeNumber(this.currentNumber);
+					this.currentNumber = nonRepeatingRandomNumbers(this.currentNumber);
 					if (this.lastNumbers == this.targetSequence.slice(0, this.targetSequence.length-1)){ // Did we accidentally print the first n-1 numbers of the target sequence?
 						this.position == this.targetSequence.length-1; // Jump to end of target sequence
 						this.state = "printSequence";
@@ -70,56 +72,72 @@ class GameStateMachine{ // Returns the state it changed to
 						this.state = "printSequence";
 					}
 				}
-				return this.state;
+				break;
 
 			case "printSequence":
 				if(signal.type == "clockTick"){
 					if (this.position == 0 && this.currentNumber == this.targetSequence[0]){ // If we accidentally jumped in on the first number of the sequence,
 						this.position++; // Jump to the second.
 					}
-					changeNumber(this.targetSequence[position]); // Change the number to the matching one in sequence.
+					changeNumber(this.targetSequence[this.position]); // Change the number to the matching one in sequence.
 					if(this.position == this.targetSequence.length-1){ // If we just changed the last number in sequence,
-						this.startTime = Date();
-						this.currentNumber = targetSequence[targetSequence.length-1]; // So we don't print the same number after leaving the sequence!
-						this.state = "awaitPress"; // Then set marker back to start of sequence,
+						this.startTime = Date.now();
+						this.currentNumber = this.targetSequence[this.targetSequence.length-1]; // So we don't print the same number after leaving the sequence!
+						this.position = 0;
+						this.state = "awaitPress";
 					}
 					else{ // otherwise,
 						this.position++; // we aren't at the end, so increment the marker.
 					}
 				}
-				return this.state;
+				break;
 
 			case "awaitPress":
 				if(signal.type == "buttonPress"){
-					this.endTime = Date();
+					this.endTime = Date.now();
 					this.state = "correctPress";
 				}
 				else if(signal.type == "clockTick"){
 					this.state = "missedPress";
 				}
-				return this.state;
+				break;
 
 			case "correctPress":
-				reactionTime = this.endTime - this.startTime;
+				const reactionTime = this.endTime - this.startTime;
 				console.log("Reaction time:" + reactionTime); /// REPLACE ME WITH THE DATABASE STUFF
 				this.state = "printRandom"; // Note that this means the program will never enter target sequence immediately after leaving it
-				return this.state;
+				break;
 
 			case "missedPress":
 				changeNumber(this.currentNumber); // Do this first, to try and keep timing as close to 500ms between numbers as possible
 				console.log("Missed the sequence!"); /// REPLACE ME WITH THE DATABASE STUFF
 				this.state = "printRandom";
-				return this.state;
+				break;
 
 		}
+		console.log(this.state);
 	}
 }
 
-window.onload = function initialise(){
 const gameEngine = new GameStateMachine(3);
+console.log("created gameEngine");
+
+window.onload = function initialise(){
 document.getElementById("targSequencey").innerText = "Target Sequence = ["+gameEngine.targetSequence+"]";
-setInterval(gameEngine.send(clockTick), 500);
 }
+
+//setInterval(function(){gameEngine.send(clockTick)}, 500);
+
+var interval = 500; // ms
+var expected = Date.now() + interval;
+setTimeout(step, interval);
+function step() {
+    var dt = Date.now() - expected; // the drift (positive for overshooting)
+		gameEngine.send(clockTick);
+    expected += interval;
+    setTimeout(step, Math.max(0, interval - dt)); // take into account drift
+}
+
 
 // Other things to measure:
 // 	Probabiltiy of false alarms
